@@ -1,0 +1,11 @@
+
+# Ledger Workflow temporary files
+/docs/agents/**/audit.md
+/docs/agents/**/design-review.md
+/docs/agents/**/work.md
+/docs/agents/**/work/
+/docs/agents/**/work-packages-draft.md
+/docs/agents/**/pipeline-configuration.md
+/docs/agents/**/dependency-analysis.md
+
+/__pycache__/
