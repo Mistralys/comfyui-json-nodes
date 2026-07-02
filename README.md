@@ -57,6 +57,10 @@ This writes `metadata_00001.json` to ComfyUI's output directory:
 }
 ```
 
+![Basic Example](/docs/design/screenshot-basic.png)
+
+> Easy debugging by showing the serialized JSON string in the native "Preview as Text" node.
+
 ## Nodes
 
 All nodes are in the **json** category.
@@ -77,7 +81,7 @@ Each setter accepts an optional incoming `JSON_OBJECT` (creates a fresh one if n
 
 | Node | Purpose |
 |------|---------|
-| **JSON Merge Objects** | Merge all top-level keys from one object into another |
+| **JSON Merge Objects** | Merge keys from up to six objects into a base object; toggle `deep_merge` to recursively merge nested objects instead of replacing them |
 | **JSON to String** | Serialize an object to a pretty-printed JSON string |
 
 ### Getter Nodes — Read Values Back Out
