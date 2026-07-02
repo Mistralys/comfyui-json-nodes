@@ -1,0 +1,15 @@
+[project]
+name = "comfyui-json-nodes"
+version = "1.0.0"
+description = "ComfyUI V3 custom nodes to collect data in JSON format, and export or save it."
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "Mistralys" },
+]
+
+[project.urls]
+Repository = "https://github.com/Mistralys/comfyui-json-nodes"
+
+[tool.comfy]
+PublisherId = "Mistralys"
