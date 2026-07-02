@@ -72,12 +72,13 @@ _Nest the values of a JSON Object into the specified key._
 ### "JSON Merge Objects"
 _Merge all top-level keys from one JSON object into another._
 
-Use this to combine multiple separately-built JSON objects into one without nesting them under a key. Duplicate keys are overwritten by the merge source.
+Use this to combine multiple separately-built JSON objects into one without nesting them under a key.
 
 - Input: `json-object` - Optional JSON Object to merge into (creates a new one if not specified).
-- Input: `json-object` - Merge source (Mandatory. All its keys are copied into the target; duplicate keys overwrite the target).
+- Input: `json-object` (×6) - Merge sources. All keys are copied into the target in order.
+- Input: `boolean` - `deep_merge` — When `false` (default), duplicate keys in the target are replaced entirely by the source value. When `true`, if both the target and source values for a key are objects, they are merged recursively instead of replaced.
 - Output: `json-object` - The merged JSON Object.
-- Output: `json-object` - Merge source passthrough (for connecting to multiple targets).
+- Output: `json-object` (×6) - Merge source passthroughs (for connecting to multiple targets).
 
 ### "JSON to String"
 _Converts a JSON node to its string representation._

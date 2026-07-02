@@ -59,6 +59,22 @@ def _coerce_json_object(value):
     return value if isinstance(value, dict) else {}
 
 
+def _deep_merge(target, source):
+    """Recursively merge source dict into target dict in place.
+
+    For each key in source:
+    - If the key exists in target and both values are dicts, recurse.
+    - Otherwise, replace target[key] with source[key].
+
+    source values are assumed to already be deep-copied by the caller.
+    """
+    for key, value in source.items():
+        if key in target and isinstance(target[key], dict) and isinstance(value, dict):
+            _deep_merge(target[key], value)
+        else:
+            target[key] = value
+
+
 _KEY_COMPONENT_MAX_LENGTH = 40
 
 
@@ -213,7 +229,7 @@ class JsonStringNode(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="Mistralys_JsonString",
-            display_name="JSON String",
+            display_name="JSON Set String",
             category="json",
             inputs=[
                 JsonObject.Input("json_object", optional=True,
@@ -252,7 +268,7 @@ class JsonIntNode(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="Mistralys_JsonInt",
-            display_name="JSON Int",
+            display_name="JSON Set Int",
             category="json",
             inputs=[
                 JsonObject.Input("json_object", optional=True,
@@ -291,7 +307,7 @@ class JsonFloatNode(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="Mistralys_JsonFloat",
-            display_name="JSON Float",
+            display_name="JSON Set Float",
             category="json",
             inputs=[
                 JsonObject.Input("json_object", optional=True,
@@ -330,7 +346,7 @@ class JsonBooleanNode(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="Mistralys_JsonBoolean",
-            display_name="JSON Boolean",
+            display_name="JSON Set Boolean",
             category="json",
             inputs=[
                 JsonObject.Input("json_object", optional=True,
@@ -369,7 +385,7 @@ class JsonObjectNode(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="Mistralys_JsonObject",
-            display_name="JSON Object",
+            display_name="JSON Set Object",
             category="json",
             inputs=[
                 JsonObject.Input("json_object", optional=True,
@@ -416,22 +432,25 @@ class JsonMergeObjectsNode(io.ComfyNode):
                     tooltip="Connect an existing JSON object to merge into, or leave empty to start a new one.",
                 ),
                 JsonObject.Input("merge_object_1", optional=True,
-                    tooltip="First JSON object to merge in. Its keys are copied into the base object, overwriting duplicates.",
+                    tooltip="First JSON object to merge in. Its keys are copied into the base object.",
                 ),
                 JsonObject.Input("merge_object_2", optional=True,
-                    tooltip="Second JSON object to merge in. Applied after merge_object_1; overwrites any duplicate keys.",
+                    tooltip="Second JSON object to merge in. Applied after merge_object_1.",
                 ),
                 JsonObject.Input("merge_object_3", optional=True,
-                    tooltip="Third JSON object to merge in. Applied after merge_object_2; overwrites any duplicate keys.",
+                    tooltip="Third JSON object to merge in. Applied after merge_object_2.",
                 ),
                 JsonObject.Input("merge_object_4", optional=True,
-                    tooltip="Fourth JSON object to merge in. Applied after merge_object_3; overwrites any duplicate keys.",
+                    tooltip="Fourth JSON object to merge in. Applied after merge_object_3.",
                 ),
                 JsonObject.Input("merge_object_5", optional=True,
-                    tooltip="Fifth JSON object to merge in. Applied after merge_object_4; overwrites any duplicate keys.",
+                    tooltip="Fifth JSON object to merge in. Applied after merge_object_4.",
                 ),
                 JsonObject.Input("merge_object_6", optional=True,
-                    tooltip="Sixth JSON object to merge in. Applied last; overwrites any duplicate keys.",
+                    tooltip="Sixth JSON object to merge in. Applied last.",
+                ),
+                io.Boolean.Input("deep_merge", default=False,
+                    tooltip="When enabled, nested object keys are merged recursively instead of being replaced. When disabled (default), a duplicate key in the merge source overwrites the entire value in the target.",
                 ),
             ],
             outputs=[
@@ -469,6 +488,7 @@ class JsonMergeObjectsNode(io.ComfyNode):
         merge_object_4=None,
         merge_object_5=None,
         merge_object_6=None,
+        deep_merge=False,
     ):
         obj = copy.deepcopy(_coerce_json_object(json_object) or {})
         m1 = _coerce_json_object(merge_object_1)
@@ -479,7 +499,10 @@ class JsonMergeObjectsNode(io.ComfyNode):
         m6 = _coerce_json_object(merge_object_6)
         for source in (m1, m2, m3, m4, m5, m6):
             if source is not None:
-                obj.update(copy.deepcopy(source))
+                if deep_merge:
+                    _deep_merge(obj, copy.deepcopy(source))
+                else:
+                    obj.update(copy.deepcopy(source))
         return io.NodeOutput(obj, m1, m2, m3, m4, m5, m6)
 
 
@@ -490,7 +513,6 @@ class JsonGetStringNode(io.ComfyNode):
             node_id="Mistralys_JsonGetString",
             display_name="JSON Get String",
             category="json",
-            description="Read a value from a JSON object as a string. Supports dot notation (e.g. 'address.city') and automatic type conversion.",
             inputs=[
                 JsonObject.Input("json_object",
                     tooltip="The JSON object to read the value from.",
@@ -557,7 +579,6 @@ class JsonGetIntNode(io.ComfyNode):
             node_id="Mistralys_JsonGetInt",
             display_name="JSON Get Int",
             category="json",
-            description="Read a value from a JSON object as an integer. Supports dot notation and automatic type conversion.",
             inputs=[
                 JsonObject.Input("json_object",
                     tooltip="The JSON object to read the value from.",
@@ -618,7 +639,6 @@ class JsonGetFloatNode(io.ComfyNode):
             node_id="Mistralys_JsonGetFloat",
             display_name="JSON Get Float",
             category="json",
-            description="Read a value from a JSON object as a float. Supports dot notation and automatic type conversion.",
             inputs=[
                 JsonObject.Input("json_object",
                     tooltip="The JSON object to read the value from.",
@@ -685,7 +705,6 @@ class JsonGetBoolNode(io.ComfyNode):
             node_id="Mistralys_JsonGetBool",
             display_name="JSON Get Bool",
             category="json",
-            description="Read a value from a JSON object as a boolean. Supports dot notation and automatic type conversion.",
             inputs=[
                 JsonObject.Input("json_object",
                     tooltip="The JSON object to read the value from.",
@@ -737,7 +756,6 @@ class JsonGetObjectNode(io.ComfyNode):
             node_id="Mistralys_JsonGetObject",
             display_name="JSON Get Object",
             category="json",
-            description="Read a nested object from a JSON object. Supports dot notation for deep access.",
             inputs=[
                 JsonObject.Input("json_object",
                     tooltip="The JSON object to read the nested object from.",

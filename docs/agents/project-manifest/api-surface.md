@@ -37,6 +37,17 @@ Returns the next integer counter for a filename pattern in a directory.
 
 Returns `value` unchanged if it is a `dict`, `None` if it is `None`, or `{}` for any other type. Guards `execute()` methods against non-dict inputs without raising errors. The caller decides whether `None` should become `{}` via `or {}`.
 
+### `_deep_merge(target, source)`
+
+Recursively merges `source` into `target` in place.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `target` | `dict` | The dictionary to merge into (modified in place) |
+| `source` | `dict` | The dictionary to merge from (values assumed already deep-copied by caller) |
+
+**Behavior:** For each key in `source`: if the key exists in `target` and both values are `dict`, recurse. Otherwise replace `target[key]` with `source[key]`.
+
 ### `_sanitize_key(key)`
 
 Sanitizes a dot-notation key string. Strips whitespace, collapses internal whitespace to a single space, and validates each component is non-empty and within `_KEY_COMPONENT_MAX_LENGTH` (40) characters. Raises `ValueError` on invalid input.
