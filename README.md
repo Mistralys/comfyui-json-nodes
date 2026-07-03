@@ -1,22 +1,29 @@
 # ComfyUI JSON Nodes
 
-Build, read, and save JSON objects directly in your ComfyUI workflow — no scripting required.
+Build, read, and save JSON objects directly in your [ComfyUI][https://comfy.org/] Workflow — no scripting required.
 
 ## Why Use It
 
-Capturing workflow metadata (sampler settings, LoRA names, prompt snippets) normally means bolting on complex nodes or post-processing scripts. ComfyUI JSON Nodes lets you tap into any value already flowing through your graph, collect it into a typed JSON object, and save it alongside your image — all without rewiring a single existing connection.
+These nodes let you collect values in your workflow into typed JSON objects without rewiring existing connections. This data can then be saved alongside your image, and be accessed anytime.
+
+## Usage Examples
+
+- Collecting Workflow metadata.
+- Saving configuration data.
+
+## Built To Last
+
+These nodes are built as close to the vanilla ComfyUI feature set as possible, and each of them fulfills a singular purpose. This makes them very stable from the start.
 
 ## Features
 
-- **Non-destructive capture** — every node passes its value straight through, so existing node connections are never broken.
-- **Typed setter nodes** — add string, integer, float, boolean, or nested object values with dedicated nodes.
-- **Dot-notation nesting** — use `model.name` as a key to create nested structures automatically.
-- **Merge independent objects** — combine two separately-built JSON objects into one without nesting.
-- **Read values back** — getter nodes retrieve any stored key as the right type, with automatic conversion.
-- **Configurable error handling** — raise workflow errors on missing keys, empty strings, or zero values.
-- **Serialize to string** — convert any JSON object to a pretty-printed string for use in text nodes.
-- **Save to disk** — write `.json` files to ComfyUI's output directory with auto-incrementing counters.
-- **Canvas tooltips** — every input and output shows a description when you hover over it.
+- **Parallel flow** — All nodes can capture data without disrupting your existing flow.
+- **Data types** — dedicated nodes for basic types like strings, integers, floats and booleans.
+- **Nested data** — Use dot notation in keys (`model.name`) to create nested structures.
+- **Merge data** — combine multiple data sets to gather the entire data your workflow produces.
+- **Access values** — Stored values can be accessed anytime.
+- **Customize errors** — Choose when to fail and provide custom error messages.
+- **Display & Save** — display a pretty-printed JSON string, or write to JSON files.
 
 ## Requirements
 
@@ -32,34 +39,11 @@ cd /path/to/ComfyUI/custom_nodes
 git clone https://github.com/Mistralys/comfyui-json-nodes.git
 ```
 
-The nodes appear under the **json** category in the node picker.
-
 ## Usage Example
-
-Chain setter nodes to build a JSON object, then save it:
-
-```
-JSON String  (key="name",    value="my_workflow")
-  → JSON Int   (key="steps",   value=20)
-    → JSON Float (key="cfg",    value=7.5)
-      → JSON Boolean (key="hi_res", value=True)
-        → Save JSON (filename="metadata")
-```
-
-This writes `metadata_00001.json` to ComfyUI's output directory:
-
-```json
-{
-  "name": "my_workflow",
-  "steps": 20,
-  "cfg": 7.5,
-  "hi_res": true
-}
-```
 
 ![Basic Example](/docs/design/screenshot-basic.png)
 
-> Easy debugging by showing the serialized JSON string in the native "Preview as Text" node.
+> Debugging is possible by showing the serialized JSON string in the native "Preview as Text" node.
 
 ## Nodes
 
@@ -69,11 +53,11 @@ All nodes are in the **json** category.
 
 | Node | Purpose |
 |------|---------|
-| **JSON String** | Add a string value under a key |
-| **JSON Int** | Add an integer value under a key |
-| **JSON Float** | Add a float value under a key |
-| **JSON Boolean** | Add a boolean value under a key |
-| **JSON Object** | Nest a sub-object under a key |
+| **JSON Set String** | Add a string value under a key |
+| **JSON Set Int** | Add an integer value under a key |
+| **JSON Set Float** | Add a float value under a key |
+| **JSON Set Boolean** | Add a boolean value under a key |
+| **JSON Set Object** | Nest a sub-object under a key |
 
 Each setter accepts an optional incoming `JSON_OBJECT` (creates a fresh one if none is connected) and outputs the updated object plus a passthrough of the value and key.
 
@@ -100,9 +84,7 @@ Getters convert stored values to the requested type automatically. All control i
 
 | Node | Purpose |
 |------|---------|
-| **Save JSON** | Write the JSON object to a `.json` file in ComfyUI's output directory |
-
-`Save JSON` accepts a base filename, an optional subfolder, and a counter length (set to `0` to overwrite on every run instead of incrementing). Subfolders are created automatically. Path-traversal attacks are blocked: the filename is sanitized with `os.path.basename()` and the resolved subfolder path is validated to stay within the output directory.
+| **JSON Save File** | Write the JSON object to a `.json` file in ComfyUI's output directory |
 
 ## Dot Notation
 
@@ -116,7 +98,7 @@ Any key containing a dot is treated as a nested path. Setting `key="model.name"`
 }
 ```
 
-Intermediate dictionaries are created automatically. All nodes support dot notation; there is no escape mechanism for literal dots in key names.
+All nodes support dot notation, and each dot adds a nesting level. This works both for setting and getting values.
 
 ## Learn More
 
