@@ -71,7 +71,7 @@ When making changes to the codebase, update the corresponding documentation:
 | Unsure about V3 API usage | Consult the skills in `comfyui-custom-node-skills`; check `skill_test_nodes/` for working examples | MUST |
 | V3 API pattern not covered by skills | Check ComfyUI source if accessible; flag gap in skills workspace | SHOULD |
 | Untested code path | Proceed with caution, add manual test recommendation | SHOULD |
-| Tempted to add features beyond spec | Do not. This project is intentionally focused — thirteen nodes, no extras | MUST |
+| Tempted to add features beyond spec | Do not. This project is intentionally focused — fourteen nodes, no extras | MUST |
 
 ---
 
@@ -80,11 +80,11 @@ When making changes to the codebase, update the corresponding documentation:
 | Property | Value |
 |---|---|
 | **Language** | Python 3.10+ |
-| **Architecture** | Thirteen ComfyUI V3 custom nodes (4 primitive + 3 structural + 5 getter + 1 output) |
+| **Architecture** | Fourteen ComfyUI V3 custom nodes (4 primitive + 1 load + 3 structural + 5 getter + 1 output) |
 | **API** | ComfyUI V3 (`comfy_api.latest`) — no V1 fallback |
 | **Package Manager** | pip (installed via ComfyUI custom_nodes) |
 | **Build Tool** | None (pure Python) |
-| **Test Framework** | Manual testing in ComfyUI |
+| **Test Framework** | Mock-based unit tests (`verify_*.py`) + manual testing in ComfyUI |
 | **External Dependencies** | None (stdlib + ComfyUI builtins only) |
 | **License** | MIT |
 
@@ -95,13 +95,15 @@ When making changes to the codebase, update the corresponding documentation:
 ```
 comfyui-json-nodes/
   __init__.py           # Extension registration: JsonNodesExtension + comfy_entrypoint()
-  nodes.py              # All 13 node classes + helpers (_set_nested_key, _get_next_counter, _get_nested_value, _coerce_to_*)
+  nodes.py              # All 14 node classes + helpers (_set_nested_key, _get_next_counter, _coerce_json_object, _deep_merge, _sanitize_key, _MISSING, _get_nested_value, _coerce_to_string, _coerce_to_int, _coerce_to_float, _coerce_to_bool, _list_json_files, _guard_input_path, _raise_getter_error)
   pyproject.toml        # Package metadata
   README.md             # User-facing documentation
   LICENSE               # MIT license
   AGENTS.md             # This file
   CLAUDE.md             # Claude companion (imports AGENTS.md)
   changelog.md          # Project changelog
+  tests/
+    verify_wp003.py     # Mock-based unit tests for LoadJsonNode (WP-003)
   docs/
     agents/
       project-manifest/ # Structured codebase overview for AI agents

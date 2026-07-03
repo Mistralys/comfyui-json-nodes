@@ -24,6 +24,7 @@ These nodes are built as close to the vanilla ComfyUI feature set as possible, a
 - **Access values** — Stored values can be accessed anytime.
 - **Customize errors** — Choose when to fail and provide custom error messages.
 - **Display & Save** — display a pretty-printed JSON string, or write to JSON files.
+- **Load data** — load JSON files from ComfyUI's input directory directly into your workflow.
 
 ## Requirements
 
@@ -79,6 +80,16 @@ Each setter accepts an optional incoming `JSON_OBJECT` (creates a fresh one if n
 | **JSON Get Object** | Nested `JSON_OBJECT` |
 
 Getters convert stored values to the requested type automatically. All control inputs (error flags, precision, custom message) are passed through as outputs so daisy-chained getters share the same configuration.
+
+### Input Node — Load from Disk
+
+| Node | Purpose |
+|------|---------|
+| **JSON Load File** | Read a `.json` file from ComfyUI's input directory and output its contents as a `JSON_OBJECT` |
+
+The file dropdown is populated at ComfyUI startup by scanning the input directory recursively for `.json` files. After adding new files to the input directory, restart ComfyUI (or use **Refresh node definitions**) to update the list.
+
+The selected file must contain a top-level JSON object (`{...}`). Arrays and other scalar values are rejected with a clear error. Files larger than 50 MB are also rejected.
 
 ### Output Node — Save to Disk
 

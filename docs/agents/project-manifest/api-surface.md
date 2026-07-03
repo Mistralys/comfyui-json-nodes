@@ -52,9 +52,13 @@ Recursively merges `source` into `target` in place.
 
 Sanitizes a dot-notation key string. Strips whitespace, collapses internal whitespace to a single space, and validates each component is non-empty and within `_KEY_COMPONENT_MAX_LENGTH` (40) characters. Raises `ValueError` on invalid input.
 
-### `_MISSING` (module-level sentinel)
+## Module-Level Constants
 
-A unique `object()` instance used to distinguish "key not found" from `None` (a valid JSON null value). Returned by `_get_nested_value()` when a key is absent.
+| Constant | Value | Purpose |
+|----------|-------|---------|
+| `_KEY_COMPONENT_MAX_LENGTH` | `40` | Maximum allowed length (chars) for each dot-notation key component in `_sanitize_key()` |
+| `_MAX_JSON_FILE_SIZE` | `50 * 1024 * 1024` (50 MB) | Maximum allowed file size for `LoadJsonNode.execute()`. Files exceeding this limit raise `ValueError`. |
+| `_MISSING` | `object()` | Sentinel distinguishing "key not found" from `None` (a valid JSON null value). Returned by `_get_nested_value()`. |
 
 ### `_get_nested_value(obj, key)`
 
@@ -83,6 +87,26 @@ Converts any JSON-storable value to a float. `bool` checked before `int` (subcla
 
 Converts any JSON-storable value to a boolean. `_MISSING` or `None` → `False`. `bool` checked before `int` (subclass guard): returned as-is. `int` → `value != 0`. `float` → `round(value) != 0`. Strings `"1"`, `"true"`, `"yes"` (case-insensitive, stripped) → `True`; all other strings → `False`. `dict`/`list` return `False`.
 
+### `_list_json_files()`
+
+Returns a sorted list of relative paths to all `.json` files in ComfyUI's input directory.
+
+**Behavior:** Calls `folder_paths.get_input_directory()` and walks the directory tree recursively via `os.walk`. Files whose names end in `.json` (case-insensitive) are included. Paths are made relative to the input directory and normalised to forward-slash separators. Returns `[]` if the input directory cannot be resolved or read (`OSError`).
+
+### `_guard_input_path(filename)`
+
+Resolves `filename` relative to the input directory and validates it stays within bounds.
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `filename` | `str` | Filename or relative path to resolve |
+
+**Returns:** Resolved absolute real path (`str`).
+
+**Raises:** `ValueError` if `filename` is empty (no file selected — includes a user-friendly restart message), or if the resolved path escapes the input directory boundary (`os.path.realpath()` + `startswith(real_input + os.sep)` check).
+
+**Called by:** `LoadJsonNode.fingerprint_inputs()` and `LoadJsonNode.execute()`.
+
 ### `_raise_getter_error(key, condition, custom_message)`
 
 Raises `ValueError` for getter node error conditions. Uses `custom_message.strip()` if non-empty; otherwise raises with `f"JSON getter error: {condition} (key: '{key}')"` .
@@ -105,6 +129,7 @@ Raises `ValueError` for getter node error conditions. Uses `custom_message.strip
 | `JsonGetBoolNode` | `Mistralys_JsonGetBool` | JSON Get Bool | `json` | — |
 | `JsonGetObjectNode` | `Mistralys_JsonGetObject` | JSON Get Object | `json` | — |
 | `JsonToStringNode` | `Mistralys_JsonToString` | JSON to String | `json` | — |
+| `LoadJsonNode` | `Mistralys_LoadJson` | JSON Load File | `json` | — |
 | `SaveJsonNode` | `Mistralys_SaveJson` | JSON Save File | `json` | `is_output_node=True`, `not_idempotent=True` |
 
 ### Primitive Value Nodes (WP-002)
@@ -183,17 +208,40 @@ No outputs (`outputs=[]`). Returns `io.NodeOutput()` with no arguments. This is 
 
 **File I/O:** UTF-8 with `json.dumps(indent=2, ensure_ascii=False)` via `open(path, "w", encoding="utf-8")`
 
+### Input Nodes
+
+#### `LoadJsonNode` — `Mistralys_LoadJson` / "JSON Load File"
+
+Reads a `.json` file from ComfyUI's input directory and outputs its parsed contents as a `JSON_OBJECT`. The file dropdown is populated at schema-definition time (ComfyUI startup) by `_list_json_files()`. If no `.json` files are present, the dropdown contains a single placeholder `""` entry.
+
+**Cache invalidation:** `fingerprint_inputs()` returns `str(os.path.getmtime(file))` so ComfyUI re-executes only when the file's modification time changes.
+
+| I/O | Name | Type | Notes |
+|-----|------|------|-------|
+| Input | `filename` | `Combo` | Relative path within the input directory; options populated by `_list_json_files()` at startup |
+| Output | `JSON_OBJECT` | `JSON_OBJECT` | Parsed contents of the selected file |
+
+**Validation / error conditions:**
+- Path traversal (resolved path outside input directory) → `ValueError`
+- File unreadable / missing → `ValueError` wrapping `OSError`
+- Malformed JSON → `ValueError` with `"Malformed JSON in file ..."` prefix
+- Top-level value is not a dict → `ValueError` with `"must contain a top-level object"` message
+
+**Security controls:**
+- `os.path.realpath()` + `startswith(real_input + os.sep)` guard in both `execute()` and `fingerprint_inputs()` — mirrors `SaveJsonNode` pattern
+- File selection constrained to the combo dropdown (populated from actual directory listing), preventing freeform path injection
+
 ## Extension Registration (WP-005)
 
 ### `JsonNodesExtension` (class)
 
-Subclass of `ComfyExtension` that registers all thirteen node classes with ComfyUI.
+Subclass of `ComfyExtension` that registers all node classes with ComfyUI.
 
 | Method | Signature | Returns |
 |--------|-----------|--------|
-| `get_node_list()` | `async get_node_list(self) -> list[type[io.ComfyNode]]` | List of all 13 node classes |
+| `get_node_list()` | `async get_node_list(self) -> list[type[io.ComfyNode]]` | List of all registered node classes |
 
-Decorated with `@override`. Returns `[JsonStringNode, JsonIntNode, JsonFloatNode, JsonBooleanNode, JsonObjectNode, JsonMergeObjectsNode, JsonGetStringNode, JsonGetIntNode, JsonGetFloatNode, JsonGetBoolNode, JsonGetObjectNode, JsonToStringNode, SaveJsonNode]`.
+Decorated with `@override`. Returns `[JsonStringNode, JsonIntNode, JsonFloatNode, JsonBooleanNode, JsonObjectNode, JsonMergeObjectsNode, JsonGetStringNode, JsonGetIntNode, JsonGetFloatNode, JsonGetBoolNode, JsonGetObjectNode, JsonToStringNode, LoadJsonNode, SaveJsonNode]`.
 
 ### `comfy_entrypoint()` (module-level function)
 

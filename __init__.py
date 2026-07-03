@@ -16,6 +16,7 @@ from .nodes import (
     JsonGetBoolNode,
     JsonGetObjectNode,
     JsonToStringNode,
+    LoadJsonNode,
     SaveJsonNode,
 )
 
@@ -36,6 +37,7 @@ class JsonNodesExtension(ComfyExtension):
             JsonGetBoolNode,
             JsonGetObjectNode,
             JsonToStringNode,
+            LoadJsonNode,
             SaveJsonNode,
         ]
 

@@ -120,6 +120,22 @@ The counter follows ComfyUI's `ImageSaveHelper` pattern:
 - `subfolder` is validated with `os.path.realpath()` against the output directory boundary. Any path resolving outside the output directory raises `ValueError`. This is an active security control, not a documentation note.
 - `filename` is processed with `os.path.basename()` before use. Directory separators in the filename input are stripped unconditionally.
 
+### "JSON Load File"
+_Read a `.json` file from ComfyUI's input directory and output its parsed data._
+
+- Input: `filename` - Combo dropdown listing all `.json` files found (recursively) in ComfyUI's input directory. Populated at ComfyUI startup.
+- Output: `json-object` - The parsed JSON data as a `JSON_OBJECT`.
+
+The dropdown is populated by scanning the input directory at schema-definition time (ComfyUI startup). After adding new `.json` files to the input directory, restart ComfyUI or refresh node definitions to update the list. If no `.json` files are present, the dropdown shows a single empty placeholder — executing the node in this state raises a `ValueError` with the message `"No file selected — add .json files to the input directory and restart ComfyUI."`.
+
+The selected file must contain a top-level JSON object (`{...}`). Arrays, strings, numbers, and other non-object values are rejected with a clear `ValueError`.
+
+Files larger than 50 MB are rejected with a clear `ValueError` before the file is read. This prevents accidental memory exhaustion from unexpectedly large files. The limit is controlled by the `_MAX_JSON_FILE_SIZE` module-level constant.
+
+Cache invalidation is handled via `fingerprint_inputs()` using the file's modification time (`mtime`). The node re-executes only when the selected file changes on disk, and uses cached output otherwise. `fingerprint_inputs()` returns `""` (rather than raising) for empty or invalid filenames so ComfyUI degrades gracefully.
+
+**Security:** File selection is constrained to the combo dropdown, preventing freeform path injection. `_guard_input_path()` in both `execute()` and `fingerprint_inputs()` ensures the resolved path stays within the input directory boundary via `os.path.realpath()` + `startswith()` check.
+
 ## Nested JSON Structures
 
 To nest values, two approaches:

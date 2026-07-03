@@ -7,7 +7,9 @@ These require explicit user approval to change.
 - **V3 API only** — no V1 compatibility layer.
 - **No external dependencies** — stdlib and ComfyUI builtins only.
 - **UTF-8 encoding only** — no encoding selection.
-- **Output directory only** — no arbitrary file path support.
+- **SaveJsonNode: output directory only** — `SaveJsonNode` writes exclusively to ComfyUI's output directory. No arbitrary file path support.
+- **LoadJsonNode: input directory only** — `LoadJsonNode` reads exclusively from ComfyUI's input directory. File selection is constrained to the combo dropdown (populated by scanning the input directory). No arbitrary file path support.
+- **LoadJsonNode: 50 MB file-size cap** — `LoadJsonNode.execute()` rejects files larger than `_MAX_JSON_FILE_SIZE` (50 MB) with a clear `ValueError`. This prevents accidental memory exhaustion from unexpectedly large files. The limit is a module-level constant and can be adjusted if a legitimate use case requires it.
 
 ## Behavioral Invariants
 
@@ -19,4 +21,7 @@ These require explicit user approval to change.
 ## Project Conventions
 
 - **Reference patterns**: Follow `skill_test_nodes/` in the companion workspace for V3 API usage.
-- **Manual testing only**: No automated test suite. Nodes are tested manually in ComfyUI.
+- **Testing strategy — two tiers:**
+  - **Unit tests (mock-based):** Standalone Python scripts that mock `folder_paths` and other ComfyUI internals. These run without a live ComfyUI instance and are the primary regression safety net. Prefer `verify_*.py` naming; place test files in the `tests/` subdirectory (`tests/verify_wp003.py` is the current example).
+  - **Manual integration tests:** Nodes must also be tested manually inside ComfyUI to validate UI rendering, combo dropdowns, and actual I/O behaviour. Unit tests cannot replace this layer.
+- **Test coverage expectation**: Every new node should ship with a corresponding `verify_*.py` script covering its acceptance criteria.

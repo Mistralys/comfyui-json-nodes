@@ -4,7 +4,7 @@
 
 1. ComfyUI calls `comfy_entrypoint()` in `__init__.py`
 2. Returns a `JsonNodesExtension` instance
-3. ComfyUI calls `get_node_list()` → receives all 13 node classes
+3. ComfyUI calls `get_node_list()` → receives all node classes
 4. Each node's `define_schema()` is called to register inputs/outputs/metadata
 
 ## JSON Object Construction (Primitive & Structural Nodes)
@@ -76,3 +76,15 @@ A key without dots (e.g. `"steps"`) sets a single top-level key as normal.
 7. If `counter_length == 0`: uses `{filename}.json` (overwrite mode)
 8. Writes JSON via `open(path, "w", encoding="utf-8")` with `json.dumps(indent=2, ensure_ascii=False)`
 9. Returns empty `io.NodeOutput()` (side-effect-only node)
+
+## JSON File Loading (LoadJsonNode)
+
+1. At ComfyUI startup, `_list_json_files()` scans `folder_paths.get_input_directory()` recursively via `os.walk` and returns a sorted list of relative paths to all `.json` files; this list populates the `filename` combo dropdown
+2. If no `.json` files are found, the combo is populated with a single placeholder `""` entry
+3. `fingerprint_inputs()` calls `_guard_input_path(filename)` — which returns `""` on any `ValueError` (including empty filename) so ComfyUI falls back to re-execution safely; on success it returns `str(os.path.getmtime(real_path))` — ComfyUI uses this to determine whether to re-execute or use cached output
+4. `execute()` calls `_guard_input_path(filename)` which raises `ValueError` with a user-friendly message if `filename` is empty (the `""` placeholder — "No file selected …"), or if the resolved path escapes the input directory (`os.path.realpath()` + `startswith(real_input + os.sep)`)
+5. Checks file size via `os.path.getsize()` → raises `ValueError` if the file exceeds `_MAX_JSON_FILE_SIZE` (50 MB)
+6. Reads the file via `open(candidate, 'r', encoding='utf-8')` → `OSError` is wrapped and re-raised as `ValueError`
+7. Parses with `json.loads()` → `JSONDecodeError` is wrapped and re-raised as `ValueError` with `"Malformed JSON in file ..."` prefix
+8. Validates that the parsed value is a `dict` → raises `ValueError` with `"must contain a top-level object"` message for any other type
+9. Returns `io.NodeOutput(data)` — the parsed dict as a `JSON_OBJECT`

@@ -14,7 +14,7 @@
 |---|---|---|
 | `comfy_api.latest` | ComfyUI built-in | V3 node API (`io`, `ui`, `ComfyNode`, `ComfyExtension`) |
 | `typing_extensions` | ComfyUI built-in | `@override` decorator for `get_node_list()` |
-| `folder_paths` | ComfyUI built-in | Resolve output directory path |
+| `folder_paths` | ComfyUI built-in | Resolve input and output directory paths |
 | `os` | Python stdlib | Path manipulation, directory creation |
 | `re` | Python stdlib | Filename pattern matching for counter scan |
 | `json` | Python stdlib | JSON serialization/deserialization |
@@ -24,7 +24,7 @@ No external (pip) dependencies.
 
 ## Architecture
 
-Thirteen custom nodes registered as a ComfyUI V3 extension.
+Fourteen custom nodes registered as a ComfyUI V3 extension.
 
 | Pattern | Description |
 |---|---|

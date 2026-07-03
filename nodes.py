@@ -76,6 +76,7 @@ def _deep_merge(target, source):
 
 
 _KEY_COMPONENT_MAX_LENGTH = 40
+_MAX_JSON_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
 def _sanitize_key(key):
@@ -210,6 +211,52 @@ def _coerce_to_bool(value):
     if isinstance(value, str):
         return value.strip().lower() in ("1", "true", "yes")
     return False
+
+
+
+def _list_json_files():
+    """Return a sorted list of relative paths to all .json files in ComfyUI's input directory.
+
+    Scans folder_paths.get_input_directory() recursively and returns paths
+    relative to the input directory, using forward slashes as separators.
+    Returns an empty list if the directory does not exist or cannot be read.
+    """
+    try:
+        input_dir = folder_paths.get_input_directory()
+    except Exception:
+        return []
+    results = []
+    try:
+        for dirpath, _dirnames, filenames in os.walk(input_dir):
+            for filename in filenames:
+                if filename.lower().endswith('.json'):
+                    abs_path = os.path.join(dirpath, filename)
+                    rel_path = os.path.relpath(abs_path, input_dir)
+                    # Normalise to forward slashes for cross-platform consistency
+                    results.append(rel_path.replace(os.sep, '/'))
+    except OSError:
+        return []
+    return sorted(results)
+
+
+def _guard_input_path(filename):
+    """Resolve a filename relative to the input directory and validate it stays within bounds.
+
+    Returns the resolved real path. Raises ValueError if the filename is empty
+    (no file selected) or if the resolved path escapes the input directory.
+    """
+    if not filename:
+        raise ValueError(
+            "No file selected \u2014 add .json files to the input directory and restart ComfyUI."
+        )
+    input_dir = folder_paths.get_input_directory()
+    real_input = os.path.realpath(input_dir)
+    candidate = os.path.realpath(os.path.join(input_dir, filename))
+    if not candidate.startswith(real_input + os.sep) and candidate != real_input:
+        raise ValueError(
+            f"File path resolves outside the input directory: {filename!r}"
+        )
+    return candidate
 
 
 def _raise_getter_error(key, condition, custom_message):
@@ -841,6 +888,85 @@ class JsonToStringNode(io.ComfyNode):
         return io.NodeOutput(json_object, serialized)
 
 
+
+class LoadJsonNode(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        file_list = _list_json_files()
+        # Provide a placeholder when no files exist so the combo is never empty
+        if not file_list:
+            file_list = [""]
+        return io.Schema(
+            node_id="Mistralys_LoadJson",
+            display_name="JSON Load File",
+            category="json",
+            inputs=[
+                io.Combo.Input(
+                    "filename",
+                    options=file_list,
+                    tooltip="Select a .json file from ComfyUI's input directory.",
+                ),
+            ],
+            outputs=[
+                JsonObject.Output(
+                    "JSON_OBJECT",
+                    tooltip="The parsed JSON data as a JSON object.",
+                ),
+            ],
+        )
+
+    @classmethod
+    def fingerprint_inputs(cls, filename):
+        """Return the file's mtime so ComfyUI re-executes when content changes."""
+        try:
+            real_path = _guard_input_path(filename)
+        except ValueError:
+            return ""
+        try:
+            return str(os.path.getmtime(real_path))
+        except OSError:
+            return ""
+
+    @classmethod
+    def execute(cls, filename):
+        # --- Path validation (includes empty-filename guard) ---
+        candidate = _guard_input_path(filename)
+
+        # --- File-size guard ---
+        try:
+            file_size = os.path.getsize(candidate)
+        except OSError as exc:
+            raise ValueError(f"Cannot access JSON file {filename!r}: {exc}") from exc
+        if file_size > _MAX_JSON_FILE_SIZE:
+            raise ValueError(
+                f"JSON file {filename!r} is {file_size:,} bytes, which exceeds the "
+                f"{_MAX_JSON_FILE_SIZE:,}-byte limit."
+            )
+
+        # --- Read and parse ---
+        try:
+            with open(candidate, 'r', encoding='utf-8') as fh:
+                raw = fh.read()
+        except OSError as exc:
+            raise ValueError(f"Cannot read JSON file {filename!r}: {exc}") from exc
+
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise ValueError(
+                f"Malformed JSON in file {filename!r}: {exc}"
+            ) from exc
+
+        # --- Validate top-level type ---
+        if not isinstance(data, dict):
+            raise ValueError(
+                f"JSON file {filename!r} must contain a top-level object (dict), "
+                f"but got {type(data).__name__}."
+            )
+
+        return io.NodeOutput(data)
+
+
 class SaveJsonNode(io.ComfyNode):
     @classmethod
     def define_schema(cls):
@@ -866,6 +992,13 @@ class SaveJsonNode(io.ComfyNode):
             ],
             outputs=[],
         )
+
+    @classmethod
+    def fingerprint_inputs(cls, json_object, filename, subfolder, counter_length):
+        # Return a unique value each run to force re-execution.
+        # SaveJsonNode writes files, so it must never use cached results.
+        import time
+        return time.time()
 
     @classmethod
     def execute(cls, json_object, filename, subfolder, counter_length):
