@@ -105,7 +105,7 @@ Raises `ValueError` for getter node error conditions. Uses `custom_message.strip
 | `JsonGetBoolNode` | `Mistralys_JsonGetBool` | JSON Get Bool | `json` | — |
 | `JsonGetObjectNode` | `Mistralys_JsonGetObject` | JSON Get Object | `json` | — |
 | `JsonToStringNode` | `Mistralys_JsonToString` | JSON to String | `json` | — |
-| `SaveJsonNode` | `Mistralys_SaveJson` | Save JSON | `json` | `is_output_node=True`, `not_idempotent=True` |
+| `SaveJsonNode` | `Mistralys_SaveJson` | JSON Save File | `json` | `is_output_node=True`, `not_idempotent=True` |
 
 ### Primitive Value Nodes (WP-002)
 
@@ -157,7 +157,7 @@ All four nodes share the same pattern: accept an optional `JSON_OBJECT` input, a
 
 ### Output Nodes (WP-004)
 
-#### `SaveJsonNode` — `Mistralys_SaveJson` / "Save JSON"
+#### `SaveJsonNode` — `Mistralys_SaveJson` / "JSON Save File"
 
 Saves a JSON object to a `.json` file in ComfyUI's output directory. When `counter_length` is 0, each run overwrites the previous file.
 

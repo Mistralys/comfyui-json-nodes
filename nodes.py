@@ -846,7 +846,7 @@ class SaveJsonNode(io.ComfyNode):
     def define_schema(cls):
         return io.Schema(
             node_id="Mistralys_SaveJson",
-            display_name="Save JSON",
+            display_name="JSON Save File",
             category="json",
             is_output_node=True,
             not_idempotent=True,
