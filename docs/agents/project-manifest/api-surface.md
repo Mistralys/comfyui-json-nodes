@@ -123,6 +123,7 @@ Raises `ValueError` for getter node error conditions. Uses `custom_message.strip
 | `JsonBooleanNode` | `Mistralys_JsonBoolean` | JSON Boolean | `json` | — |
 | `JsonObjectNode` | `Mistralys_JsonObject` | JSON Object | `json` | — |
 | `JsonMergeObjectsNode` | `Mistralys_JsonMergeObjects` | JSON Merge Objects | `json` | — |
+| `JsonRerouteNode` | `Mistralys_JsonReroute` | JSON Reroute | `json` | — |
 | `JsonGetStringNode` | `Mistralys_JsonGetString` | JSON Get String | `json` | — |
 | `JsonGetIntNode` | `Mistralys_JsonGetInt` | JSON Get Int | `json` | — |
 | `JsonGetFloatNode` | `Mistralys_JsonGetFloat` | JSON Get Float | `json` | — |
@@ -241,7 +242,7 @@ Subclass of `ComfyExtension` that registers all node classes with ComfyUI.
 |--------|-----------|--------|
 | `get_node_list()` | `async get_node_list(self) -> list[type[io.ComfyNode]]` | List of all registered node classes |
 
-Decorated with `@override`. Returns `[JsonStringNode, JsonIntNode, JsonFloatNode, JsonBooleanNode, JsonObjectNode, JsonMergeObjectsNode, JsonGetStringNode, JsonGetIntNode, JsonGetFloatNode, JsonGetBoolNode, JsonGetObjectNode, JsonToStringNode, LoadJsonNode, SaveJsonNode]`.
+Decorated with `@override`. Returns `[JsonStringNode, JsonIntNode, JsonFloatNode, JsonBooleanNode, JsonObjectNode, JsonMergeObjectsNode, JsonRerouteNode, JsonGetStringNode, JsonGetIntNode, JsonGetFloatNode, JsonGetBoolNode, JsonGetObjectNode, JsonToStringNode, LoadJsonNode, SaveJsonNode]`.
 
 ### `comfy_entrypoint()` (module-level function)
 
@@ -286,6 +287,15 @@ Merges all top-level keys from up to six source objects into `json_object` using
 | Output | `MERGE_OBJECT_4` | `JSON_OBJECT` | Passthrough of `merge_object_4` (original reference) |
 | Output | `MERGE_OBJECT_5` | `JSON_OBJECT` | Passthrough of `merge_object_5` (original reference) |
 | Output | `MERGE_OBJECT_6` | `JSON_OBJECT` | Passthrough of `merge_object_6` (original reference) |
+
+#### `JsonRerouteNode` — `Mistralys_JsonReroute` / "JSON Reroute"
+
+Typed passthrough for `JSON_OBJECT` connections. Outputs a deep copy of the input, or `{}` if no input is connected. No key, no value manipulation, no side effects.
+
+| I/O | Name | Type | Notes |
+|-----|------|------|-------|
+| Input | `json_object` | `JSON_OBJECT` | Optional — outputs `{}` if not connected |
+| Output | `JSON_OBJECT` | `JSON_OBJECT` | Deep copy of input, or `{}` if no input |
 
 ### Getter Nodes
 

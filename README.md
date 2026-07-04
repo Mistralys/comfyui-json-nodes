@@ -62,11 +62,12 @@ All nodes are in the **json** category.
 
 Each setter accepts an optional incoming `JSON_OBJECT` (creates a fresh one if none is connected) and outputs the updated object plus a passthrough of the value and key.
 
-### Structural Nodes — Combine and Convert
+### Structural Nodes — Combine, Convert, and Route
 
 | Node | Purpose |
 |------|---------|
 | **JSON Merge Objects** | Merge keys from up to six objects into a base object; toggle `deep_merge` to recursively merge nested objects instead of replacing them |
+| **JSON Reroute** | Typed passthrough for `JSON_OBJECT` connections — pass through an existing object or create an empty `{}` |
 | **JSON to String** | Serialize an object to a pretty-printed JSON string |
 
 ### Getter Nodes — Read Values Back Out

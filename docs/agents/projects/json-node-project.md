@@ -80,6 +80,14 @@ Use this to combine multiple separately-built JSON objects into one without nest
 - Output: `json-object` - The merged JSON Object.
 - Output: `json-object` (×6) - Merge source passthroughs (for connecting to multiple targets).
 
+### "JSON Reroute"
+_Typed passthrough for JSON object connections._
+
+Use this as a junction point to split or reroute `JSON_OBJECT` connections without needing a setter node.
+
+- Input: `json-object` - Optional JSON Object (outputs an empty `{}` if not connected).
+- Output: `json-object` - Deep copy of the input, or `{}` if no input is connected.
+
 ### "JSON to String"
 _Converts a JSON node to its string representation._
 

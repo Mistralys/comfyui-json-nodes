@@ -48,6 +48,14 @@ A key without dots (e.g. `"steps"`) sets a single top-level key as normal.
 2. Serializes via `json.dumps(indent=2, ensure_ascii=False)`
 3. Returns: passthrough `JSON_OBJECT` (same reference) + `STRING` output
 
+## JSON Reroute (JsonRerouteNode)
+
+1. User optionally connects a `JSON_OBJECT` to `json_object`
+2. `_coerce_json_object()` guards against non-dict inputs
+3. If input is connected: deep-copies the coerced value for fork-safety
+4. If no input connected: outputs a new empty `{}`
+5. Returns: `JSON_OBJECT` output (deep copy or empty dict)
+
 ## JSON Value Retrieval (Getter Nodes)
 
 1. User connects a `JSON_OBJECT` to `json_object` (mandatory)
