@@ -553,6 +553,31 @@ class JsonMergeObjectsNode(io.ComfyNode):
         return io.NodeOutput(obj, m1, m2, m3, m4, m5, m6)
 
 
+class JsonRerouteNode(io.ComfyNode):
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(
+            node_id="Mistralys_JsonReroute",
+            display_name="JSON Reroute",
+            category="json",
+            inputs=[
+                JsonObject.Input("json_object", optional=True,
+                    tooltip="Connect a JSON object to pass through, or leave empty to output an empty object.",
+                ),
+            ],
+            outputs=[
+                JsonObject.Output("JSON_OBJECT",
+                    tooltip="The JSON object passed through (deep copy), or an empty object if no input is connected.",
+                ),
+            ],
+        )
+
+    @classmethod
+    def execute(cls, json_object=None):
+        obj = copy.deepcopy(_coerce_json_object(json_object) or {})
+        return io.NodeOutput(obj)
+
+
 class JsonGetStringNode(io.ComfyNode):
     @classmethod
     def define_schema(cls):
